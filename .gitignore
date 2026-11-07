@@ -1,0 +1,23 @@
+# 다른 사람의 저장소 클론 — 원본 링크는 각 README에 있음 (용량·라이선스 이유로 제외)
+*/plugin/
+HyperFrames/src/
+security-audit-skill/repo/
+ECC/sandbox/
+
+# 자체 git 저장소가 있는 테스트 대상 (중첩 저장소)
+security-audit-skill/test-target/
+
+# 비밀값·로컬 설정
+.env
+.env.*
+!.env.example
+.vscode/
+
+# OS·빌드 부산물
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+
+# 비공개 프로젝트(stell)의 보안 감사 계획 — 공개 저장소에 올리지 않음
+security-audit-skill/prompts/stell.md

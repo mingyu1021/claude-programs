@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "historyId": "1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a",
+  "currentRevision": "b544d77a-2f2b-493e-9bb1-d22ac4c75027",
+  "pendingChanges": false,
+  "files": {
+    "AGENTS.md": {
+      "hash": "1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/1a/1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3"
+    },
+    "CLAUDE.md": {
+      "hash": "1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/1a/1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3"
+    },
+    "hyperframes.json": {
+      "hash": "53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/53/53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50"
+    },
+    "index.html": {
+      "hash": "06140953d1bee62f67ac649dbb870ad06d9a77678214e996cc5c2b6d247de1eb",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/06/06140953d1bee62f67ac649dbb870ad06d9a77678214e996cc5c2b6d247de1eb"
+    },
+    "meta.json": {
+      "hash": "4e5b37d2036438d84fcc7c60bff99bc4b77b981a18b8a423ba73c70181a89a5e",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/4e/4e5b37d2036438d84fcc7c60bff99bc4b77b981a18b8a423ba73c70181a89a5e"
+    },
+    "package.json": {
+      "hash": "5917f044373a34e651ea329e90c8ff7c1259bb4191a78128fb442b296611a03a",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/59/5917f044373a34e651ea329e90c8ff7c1259bb4191a78128fb442b296611a03a"
+    },
+    "compositions/scene.html": {
+      "hash": "48cf3624e1d24506cde68986dc5f8d72eb4d1d7aa08b276906c57a927b26ad91",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/48/48cf3624e1d24506cde68986dc5f8d72eb4d1d7aa08b276906c57a927b26ad91"
+    }
+  },
+  "revisions": {
+    "11cd2faf-4dbe-46e2-81ad-3b7dc79a3a0d": {
+      "actor": {
+        "kind": "outside",
+        "name": "Outside"
+      },
+      "label": "Changed outside the app",
+      "startedAt": 1794081971828,
+      "endedAt": 1794081971829,
+      "files": {
+        "compositions/scene.html": {
+          "before": null,
+          "after": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/48/48cf3624e1d24506cde68986dc5f8d72eb4d1d7aa08b276906c57a927b26ad91"
+        },
+        "index.html": {
+          "before": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/52/52fb8bd618a3cc5c8243a36a3eddf2b322f5b1df4a5d0a88bb84ee96475ca4e2",
+          "after": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/31/31323594332b4ff4aa099e09b65205f57bc54345d615053f582b3badb9cbf325"
+        }
+      }
+    },
+    "b544d77a-2f2b-493e-9bb1-d22ac4c75027": {
+      "actor": {
+        "kind": "outside",
+        "name": "Outside"
+      },
+      "label": "Changed outside the app",
+      "startedAt": 1794081995020,
+      "endedAt": 1794081995020,
+      "files": {
+        "index.html": {
+          "before": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/31/31323594332b4ff4aa099e09b65205f57bc54345d615053f582b3badb9cbf325",
+          "after": "/Users/mingyupark/.cache/hyperframes/history/1924273c-c6b9-4e74-b8cf-c2f9cf9ab39a/blobs/06/06140953d1bee62f67ac649dbb870ad06d9a77678214e996cc5c2b6d247de1eb"
+        }
+      }
+    }
+  },
+  "checks": {
+    "latest": {
+      "revision": "b544d77a-2f2b-493e-9bb1-d22ac4c75027",
+      "id": "1869b478-2ff7-497c-9d94-0709bedfd0b4"
+    },
+    "revisions": {
+      "11cd2faf-4dbe-46e2-81ad-3b7dc79a3a0d": [
+        {
+          "id": "b706ec6a-a83c-4f5f-8d83-2cda187252bc",
+          "scope": "project",
+          "metadata": {
+            "ok": false,
+            "browserSkipped": false,
+            "options": {
+              "samples": 9,
+              "atTransitions": false,
+              "maxIssues": 80,
+              "collapseStatic": true,
+              "tolerance": 2,
+              "timeout": 45000,
+              "contrast": true,
+              "strict": false,
+              "snapshots": false,
+              "browserGpuMode": "auto"
+            }
+          },
+          "createdAt": 1794081972859,
+          "contentHash": "2ee70eb21c0d72b2a4d97366231e4403fb312280db9ee353ff64d972719f18d6",
+          "revision": "11cd2faf-4dbe-46e2-81ad-3b7dc79a3a0d",
+          "inputFingerprint": "b49665a3de94a5c8ef31ce3a02e2616bbc0fc24b262b3cc26c4eb79289ad38e0",
+          "inputScope": "local-project-files",
+          "attribution": "recorded-revision",
+          "status": "cleaned",
+          "cleanedAfterRender": "87a9ce30-d2ae-412b-b115-498b05e319d6"
+        }
+      ],
+      "b544d77a-2f2b-493e-9bb1-d22ac4c75027": [
+        {
+          "id": "1869b478-2ff7-497c-9d94-0709bedfd0b4",
+          "scope": "project",
+          "report": "/Users/mingyupark/2026-2/Claude_programs/HyperFrames/test/intro/.hyperframes/artifacts/checks/1869b478-2ff7-497c-9d94-0709bedfd0b4.json",
+          "metadata": {
+            "ok": true,
+            "browserSkipped": false,
+            "options": {
+              "samples": 9,
+              "atTransitions": false,
+              "maxIssues": 80,
+              "collapseStatic": true,
+              "tolerance": 2,
+              "timeout": 45000,
+              "contrast": true,
+              "strict": false,
+              "snapshots": false,
+              "browserGpuMode": "auto"
+            }
+          },
+          "createdAt": 1794081995940,
+          "contentHash": "83b76623b9e0e77d450a721ab6414e9f731d10182df0a2eaf95842fd70a7c50e",
+          "revision": "b544d77a-2f2b-493e-9bb1-d22ac4c75027",
+          "inputFingerprint": "c10612fa1c3ff859b4349bb5b19abcad68f5d513193681f305fd0a9ee596d4ce",
+          "inputScope": "local-project-files",
+          "attribution": "recorded-revision"
+        }
+      ]
+    },
+    "unversioned": [
+      {
+        "id": "a84e826c-09b1-44ae-9466-a03719fe78aa",
+        "scope": "project",
+        "report": "/Users/mingyupark/2026-2/Claude_programs/HyperFrames/test/intro/.hyperframes/artifacts/checks/a84e826c-09b1-44ae-9466-a03719fe78aa.json",
+        "metadata": {
+          "ok": true,
+          "browserSkipped": false,
+          "options": {
+            "samples": 9,
+            "atTransitions": false,
+            "maxIssues": 80,
+            "collapseStatic": true,
+            "tolerance": 2,
+            "timeout": 45000,
+            "contrast": true,
+            "strict": false,
+            "snapshots": false,
+            "browserGpuMode": "auto"
+          }
+        },
+        "createdAt": 1794081895470,
+        "contentHash": "7335b2a17fffded36149c1aad47dba056e3375b9d95c39b0fd9bdc68866097b0",
+        "revision": null,
+        "inputFingerprint": "324ea9d97f8fa225a9716388fd1ade11b2904ae0d635dc98b5c0be2f72c1fa53",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      }
+    ]
+  },
+  "snapshots": {
+    "latest": null,
+    "revisions": {},
+    "unversioned": []
+  },
+  "renders": {
+    "latest": {
+      "id": "87a9ce30-d2ae-412b-b115-498b05e319d6",
+      "completedAt": 1794082010936,
+      "output": "/Users/mingyupark/2026-2/Claude_programs/HyperFrames/test/intro/out.mp4",
+      "status": "completed",
+      "revision": "b544d77a-2f2b-493e-9bb1-d22ac4c75027"
+    },
+    "retainedRevisions": [
+      "b544d77a-2f2b-493e-9bb1-d22ac4c75027"
+    ]
+  },
+  "pendingArtifactCleanup": []
+}

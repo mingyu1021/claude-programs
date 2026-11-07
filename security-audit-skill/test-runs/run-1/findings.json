@@ -1,0 +1,566 @@
+[
+  {
+    "verdict": "confirmed",
+    "fingerprint": "files-path-traversal-no-canonicalization",
+    "title": "Path traversal in GET /files allows reading arbitrary server files",
+    "description": "The /files endpoint accepts a query parameter 'name' that is directly concatenated with FILE_ROOT via path.join() without any canonicalization guard. While path.join() normalizes path segments, it does not prevent traversal outside the base directory using .. sequences. An authenticated attacker can supply payloads like ../../etc/passwd to read arbitrary files accessible to the Node.js process.",
+    "root_cause": "app.js line 49: path.join(FILE_ROOT, name) is called with name sourced directly from the query string (line 48) with no path canonicalization, no startsWith guard, and no character validation to prevent .. traversal.",
+    "intended_behavior": "The /files endpoint should only allow reading files within the public/ directory. The FILE_ROOT boundary should be enforced by resolving the final path and asserting it is a descendant of FILE_ROOT.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "app.js",
+        "line": 48,
+        "scope": "HTTP request handler for GET /files",
+        "description": "Query parameter 'name' is read from the request URL without any sanitization or validation"
+      },
+      {
+        "kind": "propagation",
+        "file": "app.js",
+        "line": 48,
+        "scope": "HTTP request handler for GET /files",
+        "description": "Unsanitized 'name' parameter assigned directly: name = url.searchParams.get('name') || 'index.txt'"
+      },
+      {
+        "kind": "sink",
+        "file": "app.js",
+        "line": 49,
+        "scope": "HTTP request handler for GET /files",
+        "description": "fs.readFile called with path.join(FILE_ROOT, name): path.join normalizes '..' sequences, resolving them outside FILE_ROOT with no guard"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "app.js",
+        "line": 13,
+        "description": "FILE_ROOT = path.join(__dirname, 'public') defines the intended boundary"
+      },
+      {
+        "file": "app.js",
+        "line": 48,
+        "description": "name = url.searchParams.get('name') || 'index.txt' — untrusted input with no validation"
+      },
+      {
+        "file": "app.js",
+        "line": 49,
+        "description": "fs.readFile(path.join(FILE_ROOT, name), ...) — path.join with '..' traversal resolves outside FILE_ROOT; no startsWith guard follows"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Attacker must provide a valid Bearer token (tok-alice or tok-bob); unauthenticated requests rejected at line 23-26"
+      },
+      {
+        "kind": "system_configuration",
+        "description": "Target file must be readable by the Node.js process UID"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "An authenticated user with a valid Bearer token requests files outside the intended public/ directory by supplying .. sequences in the name parameter. The server reads and returns the contents of any accessible file.",
+      "payloads": [
+        "../../etc/passwd",
+        "../../etc/shadow",
+        "../../../root/.ssh/id_rsa",
+        "../../app.js"
+      ],
+      "instructions": [
+        "Obtain a valid Bearer token (tok-alice or tok-bob from app.js:7)",
+        "Send: GET /files?name=../../etc/passwd HTTP/1.1 with Authorization: Bearer tok-alice",
+        "Server resolves path.join('/path/to/public', '../../etc/passwd') to a path outside FILE_ROOT",
+        "fs.readFile reads the resolved absolute path and returns contents in HTTP 200 response body"
+      ],
+      "observed_result": "Source analysis confirms: path.join('/x/public', '../../etc/passwd') resolves to '/etc/passwd' (two levels above FILE_ROOT). No canonicalization guard exists between line 48 and the fs.readFile call at line 49. The 404 branch fires only on fs error, not on path escape."
+    },
+    "remediation": {
+      "strategy": "Resolve the final path to an absolute canonical path and assert it starts with FILE_ROOT before passing to fs.readFile. This enforces the invariant that all served files must remain within the public/ directory.",
+      "code_changes": [
+        {
+          "file_name": "app.js",
+          "fixed_code": "if (url.pathname === \"/files\") {\n  const name = url.searchParams.get(\"name\") || \"index.txt\";\n  const resolvedPath = path.resolve(path.join(FILE_ROOT, name));\n  const resolvedRoot = path.resolve(FILE_ROOT);\n  if (!resolvedPath.startsWith(resolvedRoot + path.sep) && resolvedPath !== resolvedRoot) {\n    return res.writeHead(400).end(\"invalid path\");\n  }\n  fs.readFile(resolvedPath, (err, data) => {\n    if (err) return res.writeHead(404).end();\n    res.end(data);\n  });\n  return;\n}"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Trivial to exploit — only requires a valid token and standard path traversal sequences; no complex preconditions or race conditions"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Arbitrary file read gives access to any file readable by the Node.js process UID, including system files, SSH keys, environment variables, and application secrets — defeating the explicit FILE_ROOT security boundary"
+      },
+      "overall_severity": "high"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Source clearly shows unsanitized query parameter flowing directly to path.join() with no guarding logic; Node.js path.join behavior with '..' is documented and deterministic"
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "hardcoded-bearer-tokens-in-source",
+    "title": "Hardcoded session tokens in source code expose credentials to anyone with repository access",
+    "description": "The application defines bearer token credentials as hardcoded string literals in the SESSIONS object at module initialization. These tokens are committed to source control and exposed through any code review, repository clone, CI logs, or other source distribution channel. Any party with repository read access can extract valid tokens and authenticate as any defined user indefinitely.",
+    "root_cause": "app.js line 7: const SESSIONS = { 'tok-alice': 'alice', 'tok-bob': 'bob' } — tokens are hardcoded as plain-text source constants with no indirection, no environment variable loading, and no external secrets management.",
+    "intended_behavior": "Session tokens should be managed by an external secrets system (environment variables, secrets manager, or key management service) and never committed to source code. Tokens should be rotatable and expire.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "app.js",
+        "line": 7,
+        "scope": "module initialization",
+        "description": "SESSIONS object literal hardcodes token-to-username mappings as source constants: {\"tok-alice\": \"alice\", \"tok-bob\": \"bob\"}"
+      },
+      {
+        "kind": "propagation",
+        "file": "app.js",
+        "line": 17,
+        "scope": "currentUser function",
+        "description": "currentUser() extracts bearer token from Authorization header and performs direct lookup against the hardcoded SESSIONS map"
+      },
+      {
+        "kind": "sink",
+        "file": "app.js",
+        "line": 22,
+        "scope": "request handler authentication check",
+        "description": "user = currentUser(req) returns authenticated user identity; anyone with source access can supply the hardcoded token and bypass the authentication gate"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "app.js",
+        "line": 7,
+        "description": "SESSIONS = { \"tok-alice\": \"alice\", \"tok-bob\": \"bob\" } — tokens are plain-text string literals in source; no process.env reference or external loading"
+      },
+      {
+        "file": "app.js",
+        "line": 17,
+        "description": "SESSIONS[auth.replace(/^Bearer /, \"\")] — direct map lookup against hardcoded constants"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "system_configuration",
+        "description": "SESSIONS initialized from hardcoded source constants at module load; no environment variable or external configuration mechanism exists"
+      },
+      {
+        "kind": "authentication_level",
+        "description": "Bearer token authentication is the sole authentication mechanism; tokens validated against the hardcoded SESSIONS map"
+      },
+      {
+        "kind": "data_state",
+        "description": "Tokens never expire or rotate; they are permanent credentials committed to source"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "An attacker with read access to the repository (developer, CI system, third party with git clone) can extract hardcoded tokens from app.js and use them to authenticate as any defined user indefinitely.",
+      "payloads": [
+        "Authorization: Bearer tok-alice",
+        "Authorization: Bearer tok-bob"
+      ],
+      "instructions": [
+        "Clone or read the repository to obtain app.js",
+        "Extract tokens from line 7: tok-alice or tok-bob",
+        "Send HTTP request with header 'Authorization: Bearer tok-alice'",
+        "Server authenticates as alice; access any protected endpoint indefinitely"
+      ],
+      "observed_result": "Source confirms both tokens are valid permanently. No token expiry, rotation, or revocation mechanism exists. Any party with source access has persistent authenticated access to all accounts."
+    },
+    "remediation": {
+      "strategy": "Move tokens from hardcoded source constants to runtime environment variables. Load SESSIONS from process.env at startup, preventing credentials from being committed or exposed in source code.",
+      "code_changes": [
+        {
+          "file_name": "app.js",
+          "fixed_code": "const SESSIONS = JSON.parse(process.env.SESSIONS_JSON || '{}');"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Tokens are in source code; any clone, review, or CI log exposes them; multiple access vectors with no obfuscation"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Authenticated access as any defined user indefinitely; attacker can read invoices, user data, and trigger shell execution via /ping"
+      },
+      "overall_severity": "high"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Source literal is directly observable at app.js:7; no indirection, env-var loading, or secrets manager call exists anywhere in the file"
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "hardcoded-static-session-tokens",
+    "title": "Session tokens are static, non-random, and non-expiring — no revocation capability",
+    "description": "The application maintains a hardcoded static mapping of bearer tokens to user identities with no token lifecycle management. Tokens never expire, cannot be revoked, and are not randomly generated. Any token compromise results in permanent unauthorized access. This is independently meaningful from the source-exposure issue: even if tokens were moved to environment variables, the lack of expiry and revocation would remain a critical design flaw.",
+    "root_cause": "app.js line 7: SESSIONS values are hardcoded constants with no token generation, no timestamp, no nonce, no HMAC signature, and no expiry field. currentUser() at line 17 performs a plain property lookup with no time-based or revocation check.",
+    "intended_behavior": "Tokens should be cryptographically random (e.g., 128-bit via crypto.randomBytes), stored server-side with an expiry timestamp, revocable, and compared using a constant-time function.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "app.js",
+        "line": 7,
+        "scope": "module initialization",
+        "description": "SESSIONS = {'tok-alice':'alice','tok-bob':'bob'} — hardcoded, no entropy, no expiry field, no nonce"
+      },
+      {
+        "kind": "propagation",
+        "file": "app.js",
+        "line": 17,
+        "scope": "currentUser function",
+        "description": "auth.replace(/^Bearer /, '') produces key; SESSIONS[key] performs property lookup — no expiry check, no revocation check, no constant-time comparison"
+      },
+      {
+        "kind": "sink",
+        "file": "app.js",
+        "line": 17,
+        "scope": "currentUser return value",
+        "description": "Tokens accepted indefinitely with no temporal invalidation; once compromised, token remains permanently valid"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "app.js",
+        "line": 7,
+        "description": "SESSIONS = { \"tok-alice\": \"alice\", \"tok-bob\": \"bob\" } — static strings, no generation code, no timestamp field, no nonce, no HMAC"
+      },
+      {
+        "file": "app.js",
+        "line": 15,
+        "description": "function currentUser(req) { const auth = req.headers[\"authorization\"] || \"\"; return SESSIONS[auth.replace(/^Bearer /, \"\")] || null; } — plain property lookup, no expiry validation"
+      },
+      {
+        "file": "app.js",
+        "line": 1,
+        "description": "No crypto module imported anywhere in the file; no Date/timestamp logic for token validation"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Any bearer token matched by SESSIONS property lookup is accepted without lifetime validation"
+      },
+      {
+        "kind": "system_configuration",
+        "description": "Application uses static in-memory session store with no revocation, expiry, or rotation capability"
+      },
+      {
+        "kind": "data_state",
+        "description": "Token compromise is permanent; no mechanism exists to invalidate or retire tokens without modifying and redeploying source"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "Attacker obtains a valid token through any means (source exposure, network interception, social engineering). Token remains valid indefinitely with no expiry window or revocation capability.",
+      "payloads": [
+        "Authorization: Bearer tok-alice"
+      ],
+      "instructions": [
+        "Obtain a valid bearer token by any means",
+        "Send authenticated requests at any future time — tokens never expire",
+        "Confirm: even if the legitimate user changes their password or logs out elsewhere, there is no mechanism to invalidate the token"
+      ],
+      "observed_result": "Source confirms no expiry, rotation, or revocation path. The token remains valid for the entire lifetime of any deployed instance."
+    },
+    "remediation": {
+      "strategy": "Implement token lifecycle management: generate tokens using crypto.randomBytes, store with expiry timestamps in a server-side session map, use crypto.timingSafeEqual for comparison, and provide a revocation mechanism.",
+      "code_changes": [
+        {
+          "file_name": "app.js",
+          "fixed_code": "const { randomBytes, timingSafeEqual } = require('crypto');\nconst SESSION_TTL_MS = 3600 * 1000;\nconst sessions = new Map(); // token -> { user, expiresAt }\n\nfunction createSession(user) {\n  const token = randomBytes(16).toString('hex');\n  sessions.set(token, { user, expiresAt: Date.now() + SESSION_TTL_MS });\n  return token;\n}\n\nfunction currentUser(req) {\n  const auth = req.headers['authorization'] || '';\n  const token = auth.replace(/^Bearer /, '');\n  const session = sessions.get(token);\n  if (!session || Date.now() > session.expiresAt) return null;\n  return session.user;\n}"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Tokens are trivially discoverable (hardcoded in source), have predictable format, and persist indefinitely once obtained; any compromise is permanent"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Permanent authentication bypass as any user; no revocation capability means incident response cannot invalidate compromised sessions"
+      },
+      "overall_severity": "high"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Complete absence of token generation, expiry validation, revocation mechanism, and crypto operations is directly observable in source; no indirection or mitigations present"
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "invoices-missing-ownership-check",
+    "title": "Broken object-level authorization on GET /invoices/:id — any authenticated user reads any invoice",
+    "description": "The GET /invoices/:id endpoint authenticates the caller but never verifies that the authenticated user owns the requested invoice. Any authenticated user can enumerate and read all invoices by guessing sequential integer IDs, exposing cross-tenant financial data.",
+    "root_cause": "app.js lines 34-37: the handler fetches INVOICES[m[1]] and returns it without comparing inv.owner to the authenticated user. The owner field exists on invoice objects (lines 9-10) but is unused in the authorization path.",
+    "intended_behavior": "An authenticated user should only be able to retrieve invoices where invoice.owner matches their own identity. A request for a foreign invoice should return 403 Forbidden.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "app.js",
+        "line": 33,
+        "scope": "GET /invoices/:id handler",
+        "description": "URL path /invoices/:id matched with regex; captured group m[1] extracts numeric invoice ID from HTTP request"
+      },
+      {
+        "kind": "propagation",
+        "file": "app.js",
+        "line": 35,
+        "scope": "invoice fetch",
+        "description": "Invoice fetched from INVOICES map using captured ID without any ownership verification: const inv = INVOICES[m[1]]"
+      },
+      {
+        "kind": "sink",
+        "file": "app.js",
+        "line": 37,
+        "scope": "response serialization",
+        "description": "Full invoice object serialized to JSON and returned to any authenticated caller without ownership validation: res.end(JSON.stringify(inv))"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "app.js",
+        "line": 9,
+        "description": "Invoice 1 has owner field: { owner: \"alice\", amount: 120 } — owner field exists but is unused in authorization"
+      },
+      {
+        "file": "app.js",
+        "line": 10,
+        "description": "Invoice 2 has owner field: { owner: \"bob\", amount: 9800 } — bob's financial data accessible to alice"
+      },
+      {
+        "file": "app.js",
+        "line": 22,
+        "description": "const user = currentUser(req) — authenticated user is in scope but never referenced in the invoice handler (lines 33-38)"
+      },
+      {
+        "file": "app.js",
+        "line": 35,
+        "description": "const inv = INVOICES[m[1]] — invoice fetched by ID with no ownership check"
+      },
+      {
+        "file": "app.js",
+        "line": 37,
+        "description": "res.end(JSON.stringify(inv)) — full invoice object returned without filtering"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Attacker must be any authenticated user; unauthenticated requests rejected at lines 23-26"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "Alice is an authenticated user. She requests invoice 2 (which belongs to Bob). The server returns Bob's complete invoice data including the amount.",
+      "payloads": [
+        "GET /invoices/2 with Authorization: Bearer tok-alice",
+        "GET /invoices/1 with Authorization: Bearer tok-bob"
+      ],
+      "instructions": [
+        "Obtain a valid Bearer token (e.g., tok-alice)",
+        "Send GET /invoices/2 with Authorization: Bearer tok-alice",
+        "Server fetches INVOICES['2'] = {owner:'bob', amount:9800} without ownership check",
+        "Server returns full invoice object to alice"
+      ],
+      "observed_result": "Source shows inv returned directly without ownership verification. Alice receives {owner:'bob', amount:9800} — Bob's financial data — in the HTTP 200 response body."
+    },
+    "remediation": {
+      "strategy": "After fetching the invoice, compare inv.owner to the authenticated user and return 403 if they do not match.",
+      "code_changes": [
+        {
+          "file_name": "app.js",
+          "fixed_code": "  const m = url.pathname.match(/^\\/invoices\\/(\\d+)$/);\n  if (m) {\n    const inv = INVOICES[m[1]];\n    if (!inv) return res.writeHead(404).end();\n    if (inv.owner !== user) return res.writeHead(403).end();\n    res.end(JSON.stringify(inv));\n    return;\n  }"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Invoice IDs are sequential integers starting from 1, trivially enumerable; no additional effort or user interaction required beyond authentication"
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Cross-tenant financial data (invoice amounts, owner identities) disclosed to unauthorized authenticated users; a customer can read all other customers' invoices"
+      },
+      "overall_severity": "high"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Owner field exists on invoice objects and authenticated user is in scope, but no comparison is performed before serializing and returning the invoice; unambiguous from source"
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "ping-error-information-leakage",
+    "title": "GET /ping leaks OS error details via String(err) in HTTP response",
+    "description": "When the exec callback receives an error (empty stdout), the handler returns String(err) directly in the HTTP response body. Node.js Error objects stringified this way include the error message and exit code, which can reveal internal command structure, OS error messages, and potentially internal file paths.",
+    "root_cause": "app.js line 43: exec callback uses res.end(out || String(err)) — when stdout is falsy, the full Error object is serialized and sent to the client without sanitization.",
+    "intended_behavior": "Error details from exec should be logged server-side only. The client should receive a generic error response without internal implementation details.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "app.js",
+        "line": 42,
+        "scope": "GET /ping endpoint handler",
+        "description": "Query parameter 'host' triggers exec call; invalid or error-producing host causes exec to fail with no stdout"
+      },
+      {
+        "kind": "sink",
+        "file": "app.js",
+        "line": 43,
+        "scope": "exec callback",
+        "description": "exec callback: res.end(out || String(err)) — when out is falsy, full Error.toString() sent in HTTP response body without sanitization"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "app.js",
+        "line": 43,
+        "description": "exec(`ping -c 1 ${host}`, (err, out) => res.end(out || String(err))) — ternary sends stringified exec Error directly to HTTP response"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Endpoint requires valid Bearer token; authenticated users only"
+      },
+      {
+        "kind": "environmental_dependency",
+        "description": "Attacker must send a host value that causes exec to error with no stdout (e.g., invalid hostname causing ping to fail silently or with stderr only)"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "Authenticated attacker sends invalid host to trigger exec error and read OS error details in the response.",
+      "payloads": [
+        "GET /ping?host=invalid..host"
+      ],
+      "instructions": [
+        "Authenticate with a valid Bearer token",
+        "Send GET /ping?host=invalid..host",
+        "Observe error message in HTTP response body (e.g., 'Error: Command failed with exit code 1: ping -c 1 invalid..host')"
+      ],
+      "observed_result": "Source shows String(err) returned directly when out is falsy. A Node.js exec error includes message text from the OS, the exit code, and the command that was executed — revealing command structure and OS error details."
+    },
+    "remediation": {
+      "strategy": "Return a generic error message to the client. Log the full error server-side only.",
+      "code_changes": [
+        {
+          "file_name": "app.js",
+          "fixed_code": "exec(`ping -c 1 ${host}`, (err, out) => {\n  if (err) { console.error(err); return res.writeHead(500).end('ping failed'); }\n  res.end(out);\n});"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "medium",
+        "reason": "Easy to trigger (send invalid hostname) but requires authentication; attacker already knows they are calling a ping endpoint"
+      },
+      "impact": {
+        "score": "low",
+        "reason": "Discloses OS error details and command structure; does not expose credentials, keys, or sensitive application data; no direct capability gained"
+      },
+      "overall_severity": "low"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Code is directly visible; behavior of String(err) on Node.js exec errors is well-defined; error leakage mechanism is unambiguous"
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "ping-os-command-injection",
+    "title": "OS command injection in GET /ping via unsanitized host parameter",
+    "description": "The /ping endpoint interpolates the user-supplied host query parameter directly into a shell command string passed to child_process.exec. Because exec uses /bin/sh -c internally, any shell metacharacter in host causes arbitrary OS command execution with the privileges of the Node.js process.",
+    "root_cause": "app.js line 43: exec(`ping -c 1 ${host}`, ...) — host comes from an HTTP query parameter (line 42) with no escaping, no allowlist validation, and no use of the safer execFile API with an argument array.",
+    "intended_behavior": "The endpoint should only run ping against a validated hostname or IP address. Shell metacharacters and operators must be rejected before the value is passed to any shell-invoking function.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "app.js",
+        "line": 42,
+        "scope": "GET /ping endpoint handler",
+        "description": "Query parameter 'host' read via url.searchParams.get('host') without validation or sanitization"
+      },
+      {
+        "kind": "propagation",
+        "file": "app.js",
+        "line": 42,
+        "scope": "GET /ping endpoint handler",
+        "description": "Unsanitized host assigned: const host = url.searchParams.get('host') || '127.0.0.1'"
+      },
+      {
+        "kind": "sink",
+        "file": "app.js",
+        "line": 43,
+        "scope": "GET /ping endpoint handler",
+        "description": "Template literal interpolation into exec(): exec(`ping -c 1 ${host}`, ...) — no escaping or protection; /bin/sh -c interprets shell metacharacters"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "app.js",
+        "line": 3,
+        "description": "const { exec } = require('child_process') — imports exec which invokes /bin/sh -c"
+      },
+      {
+        "file": "app.js",
+        "line": 42,
+        "description": "const host = url.searchParams.get('host') || '127.0.0.1' — unsanitized query parameter"
+      },
+      {
+        "file": "app.js",
+        "line": 43,
+        "description": "exec(`ping -c 1 ${host}`, (err, out) => res.end(out || String(err))) — template literal with no sanitization; shell metacharacters execute arbitrary commands"
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "Attacker must provide a valid Bearer token (tok-alice or tok-bob); unauthenticated requests receive 401 at lines 23-26"
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "Any authenticated user can inject shell metacharacters into the host parameter. The shell executes the injected command and the output is reflected back in the HTTP response.",
+      "payloads": [
+        "127.0.0.1;id",
+        "127.0.0.1;cat /etc/passwd",
+        "127.0.0.1$(whoami)",
+        "`whoami`"
+      ],
+      "instructions": [
+        "Obtain a valid Bearer token (e.g., tok-alice)",
+        "Send: GET /ping?host=127.0.0.1;id with Authorization: Bearer tok-alice",
+        "Server executes: /bin/sh -c 'ping -c 1 127.0.0.1;id'",
+        "Shell splits at semicolon, executing ping then id; command output returned in HTTP response body"
+      ],
+      "observed_result": "Source confirms: template literal `ping -c 1 ${host}` with host='127.0.0.1;id' produces the string 'ping -c 1 127.0.0.1;id' passed to /bin/sh -c. The shell interprets the semicolon as a command separator and executes both commands. exec output (stdout) is returned in the HTTP response body."
+    },
+    "remediation": {
+      "strategy": "Replace exec with execFile using a fixed command and argument array, eliminating shell interpretation. Validate the host parameter against a strict hostname or IP allowlist pattern.",
+      "code_changes": [
+        {
+          "file_name": "app.js",
+          "fixed_code": "const { execFile } = require('child_process');\n// ...\nif (url.pathname === \"/ping\") {\n  const host = url.searchParams.get(\"host\") || \"127.0.0.1\";\n  const SAFE_HOST = /^[a-zA-Z0-9._-]{1,253}$/;\n  if (!SAFE_HOST.test(host)) return res.writeHead(400).end('invalid host');\n  execFile('ping', ['-c', '1', host], (err, out) => res.end(out || 'ping failed'));\n  return;\n}"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Only requires a valid token and standard shell metacharacters; no complex preconditions; any authenticated user can exploit"
+      },
+      "impact": {
+        "score": "critical",
+        "reason": "Arbitrary OS command execution as the Node.js process user; attacker can read any file, exfiltrate data, modify system state, or pivot to other systems"
+      },
+      "overall_severity": "high"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Direct template literal interpolation into exec() with no sanitization; Node.js exec() behavior with /bin/sh -c is documented and deterministic; no source-visible preventing layer"
+    }
+  }
+]

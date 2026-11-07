@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "historyId": "0a86a751-d676-492a-a025-1976b32defd2",
+  "currentRevision": null,
+  "pendingChanges": false,
+  "files": {
+    "AGENTS.md": {
+      "hash": "1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/0a86a751-d676-492a-a025-1976b32defd2/blobs/1a/1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3"
+    },
+    "CLAUDE.md": {
+      "hash": "1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/0a86a751-d676-492a-a025-1976b32defd2/blobs/1a/1a68041fc901ff835682a2a8d6f63c96dbb0b9eef8fb0971e97a79eaf69303d3"
+    },
+    "hyperframes.json": {
+      "hash": "53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/0a86a751-d676-492a-a025-1976b32defd2/blobs/53/53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50"
+    },
+    "index.html": {
+      "hash": "bb26a8f483c4b8ed34f95e1a3fd8bd97e06440351dcb1c24c71d2abdbb1a1d15",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/0a86a751-d676-492a-a025-1976b32defd2/blobs/bb/bb26a8f483c4b8ed34f95e1a3fd8bd97e06440351dcb1c24c71d2abdbb1a1d15"
+    },
+    "meta.json": {
+      "hash": "d3e69984a4857bf2e258f0a9a86c1dea8e46f1bbaea4d8cf2e0c19a7105ce272",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/0a86a751-d676-492a-a025-1976b32defd2/blobs/d3/d3e69984a4857bf2e258f0a9a86c1dea8e46f1bbaea4d8cf2e0c19a7105ce272"
+    },
+    "package.json": {
+      "hash": "a651c56c8899276682fcf2c19d7545d76ebe05795f74abc5eb65f2252fc272e4",
+      "content": "/Users/mingyupark/.cache/hyperframes/history/0a86a751-d676-492a-a025-1976b32defd2/blobs/a6/a651c56c8899276682fcf2c19d7545d76ebe05795f74abc5eb65f2252fc272e4"
+    }
+  },
+  "revisions": {},
+  "checks": {
+    "latest": null,
+    "revisions": {},
+    "unversioned": []
+  },
+  "snapshots": {
+    "latest": null,
+    "revisions": {},
+    "unversioned": []
+  },
+  "renders": {
+    "latest": {
+      "id": "f64d9059-4ccd-409a-bd19-e9f5d8bea963",
+      "completedAt": 1794081768197,
+      "output": "/Users/mingyupark/2026-2/Claude_programs/HyperFrames/test/hello/baseline.mp4",
+      "status": "completed",
+      "revision": null
+    },
+    "retainedRevisions": []
+  },
+  "pendingArtifactCleanup": []
+}

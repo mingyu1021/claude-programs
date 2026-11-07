@@ -1,0 +1,37 @@
+{
+  "run_id": "run-1",
+  "repo": "test-target",
+  "target": "/Users/mingyupark/2026-2/Claude_programs/security-audit-skill/test-target",
+  "source_ref": {
+    "commit": "cbf2ba4",
+    "message": "fixture",
+    "dirty": false
+  },
+  "profile": "quick",
+  "scope_paths": ["app.js"],
+  "budget": 12,
+  "agents_spent": 12,
+  "execution_policy": "sandboxed-source-and-local-only",
+  "no_sandbox_available": true,
+  "no_execute_policy": "no OS-enforced sandbox available; target code not executed; all checks are source-only",
+  "selected_companion_files": ["WEB-PROTOCOL-AND-AUTH.md"],
+  "prior_run_paths": [],
+  "shared_file_owners": {
+    "run-metadata.json": "parent",
+    "architecture.md": "parent",
+    "coverage-ledger.json": "parent",
+    "findings.json": "parent",
+    "REPORT.md": "parent",
+    "FINDINGS-DETAIL.md": "parent",
+    "NEEDS-VALIDATION.md": "parent"
+  },
+  "run_status": "complete",
+  "pre_recon_budget_estimate": {
+    "recon_agents": 4,
+    "hunter_wave_1": 2,
+    "final_critic": 1,
+    "verifier_reserve": 5,
+    "total_planned": 12,
+    "note": "Quick profile: 1 wave + 1 critic. Verifiers serve as merged Phase 3+5 per quick profile rules."
+  }
+}

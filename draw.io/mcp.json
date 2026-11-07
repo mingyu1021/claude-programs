@@ -1,0 +1,4 @@
+{"mcpServers":{
+  "drawio":{"command":"npx","args":["-y","@drawio/mcp"],"env":{"DRAWIO_BROWSER":"off"}},
+  "drawio-app":{"type":"http","url":"https://mcp.draw.io/mcp"}
+}}

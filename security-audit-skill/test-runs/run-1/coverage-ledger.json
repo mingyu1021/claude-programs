@@ -1,0 +1,258 @@
+[
+  {
+    "coverage_id": "app.js%23GET%20%2Ffiles::app.js%23fs.readFile::profile%2Fquick%2Fall-in-scope-subsystems::ATTACK-CLASSES.md%23Resource%20and%20file%20handling",
+    "canonical_refs": {
+      "surface": "app.js#GET /files",
+      "boundary": "app.js#fs.readFile",
+      "subsystem": "profile/quick/all-in-scope-subsystems",
+      "attack_class": "ATTACK-CLASSES.md#Resource and file handling"
+    },
+    "surface": "GET /files?name= HTTP endpoint",
+    "boundary": "fs.readFile path construction from user input",
+    "subsystem": "all-in-scope-subsystems (quick profile)",
+    "attack_class": "Resource and file handling",
+    "starting_paths": ["app.js"],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Resource and file handling",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {"block": "WEB-PROTOCOL-AND-AUTH.md#Core discipline", "reason": "No protocol-level controls; pure filesystem boundary issue"}
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "verifier-files",
+    "reviewed_paths": ["app.js"],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": ["app.js"],
+        "invariant": "File reads must be confined to FILE_ROOT; user-supplied name must not escape the public/ directory",
+        "method": "source",
+        "result": "app.js:48 reads name from query param without sanitization; app.js:49 constructs path via path.join(FILE_ROOT, name). Node path.join normalizes '..' segments. No startsWith(FILE_ROOT) guard, no path.resolve comparison, no canonicalization exists.",
+        "artifact": null
+      },
+      {
+        "agent_id": "verifier-files",
+        "reviewed_paths": ["app.js"],
+        "invariant": "path.resolve(path.join(FILE_ROOT, name)) must start with FILE_ROOT; absence of this guard is independently verified",
+        "method": "source",
+        "result": "Confirmed: app.js:49 passes path.join(FILE_ROOT, name) directly to fs.readFile. path.join normalizes '..' at the OS level, resolving outside FILE_ROOT. No path.resolve, no startsWith, no character filtering in the entire handler (lines 47-54). Fingerprint files-path-traversal-no-canonicalization confirmed.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "_hardening": []
+  },
+  {
+    "coverage_id": "app.js%23GET%20%2Finvoices%2F%3Aid::app.js%23invoice.owner::profile%2Fquick%2Fall-in-scope-subsystems::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "app.js#GET /invoices/:id",
+      "boundary": "app.js#invoice.owner",
+      "subsystem": "profile/quick/all-in-scope-subsystems",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "GET /invoices/:id HTTP endpoint",
+    "boundary": "Invoice ownership enforcement (invoice.owner field)",
+    "subsystem": "all-in-scope-subsystems (quick profile)",
+    "attack_class": "Access control",
+    "starting_paths": ["app.js"],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {"block": "WEB-PROTOCOL-AND-AUTH.md#Core discipline", "reason": "Source-visible missing ownership check; no JWT/OAuth"}
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "verifier-idor",
+    "reviewed_paths": ["app.js"],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": ["app.js"],
+        "invariant": "An authenticated user must only be able to retrieve invoices they own (invoice.owner === currentUser)",
+        "method": "source",
+        "result": "app.js:33-38: invoice fetched by numeric ID alone (INVOICES[m[1]]). The invoice.owner field (app.js:9-10) is never compared to the authenticated user. Any authenticated user can read any invoice.",
+        "artifact": null
+      },
+      {
+        "agent_id": "verifier-idor",
+        "reviewed_paths": ["app.js"],
+        "invariant": "inv.owner must equal user before returning invoice data; absence of this comparison is independently verified",
+        "method": "source",
+        "result": "Confirmed: app.js:22 binds user = currentUser(req); user is never referenced again inside the /invoices/:id handler (lines 33-38). inv.owner field is populated at lines 9-10 but never compared to user. INVOICES[m[1]] serialized directly at line 37. Fingerprint invoices-missing-ownership-check confirmed.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "_hardening": []
+  },
+  {
+    "coverage_id": "app.js%23GET%20%2Fping::app.js%23exec::profile%2Fquick%2Fall-in-scope-subsystems::ATTACK-CLASSES.md%23Injection",
+    "canonical_refs": {
+      "surface": "app.js#GET /ping",
+      "boundary": "app.js#exec",
+      "subsystem": "profile/quick/all-in-scope-subsystems",
+      "attack_class": "ATTACK-CLASSES.md#Injection"
+    },
+    "surface": "GET /ping?host= HTTP endpoint",
+    "boundary": "child_process.exec shell invocation",
+    "subsystem": "all-in-scope-subsystems (quick profile)",
+    "attack_class": "Injection",
+    "starting_paths": ["app.js"],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Injection",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {"block": "WEB-PROTOCOL-AND-AUTH.md#Core discipline", "reason": "Pure injection issue; no protocol auth bypass"}
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "verifier-cmdinject",
+    "reviewed_paths": ["app.js"],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": ["app.js"],
+        "invariant": "Shell commands must not incorporate unsanitized user-supplied input",
+        "method": "source",
+        "result": "app.js:42 reads host from query param; app.js:43 interpolates directly into exec() template literal. No escaping, allowlist, or use of execFile with argument array. exec() invokes /bin/sh -c so shell metacharacters cause arbitrary command execution.",
+        "artifact": null
+      },
+      {
+        "agent_id": "verifier-cmdinject",
+        "reviewed_paths": ["app.js"],
+        "invariant": "exec() must not receive a string containing unsanitized user input; independently verified with severity calibration",
+        "method": "source",
+        "result": "Confirmed: app.js:3 imports exec (invokes /bin/sh -c), not execFile. app.js:43 produces exec(`ping -c 1 ${host}`) with host from query string (line 42). No escaping, no allowlist regex, no shell-safe API alternative. Severity calibrated: requires authentication (tok-alice/tok-bob), so overall=high not critical despite critical impact. Fingerprint ping-os-command-injection confirmed.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "_hardening": []
+  },
+  {
+    "coverage_id": "app.js%23GET%20%2Fping::app.js%23exec::profile%2Fquick%2Fall-in-scope-subsystems::RESOURCE-EXHAUSTION-AND-AVAILABILITY.md%23Resource%20exhaustion",
+    "canonical_refs": {
+      "surface": "app.js#GET /ping",
+      "boundary": "app.js#exec",
+      "subsystem": "profile/quick/all-in-scope-subsystems",
+      "attack_class": "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Resource exhaustion"
+    },
+    "surface": "GET /ping (and all HTTP endpoints) — unbounded resource consumption",
+    "boundary": "child_process.exec without rate limiting or process quotas",
+    "subsystem": "all-in-scope-subsystems (quick profile)",
+    "attack_class": "Resource exhaustion",
+    "starting_paths": ["app.js"],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": ["RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Resource exhaustion"],
+    "excluded_blocks": [],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "deferred",
+    "agent_id": null,
+    "reviewed_paths": [],
+    "local_checks": [],
+    "result_fingerprints": [],
+    "unresolved": ["quick_profile_final_critic: resource exhaustion against localhost-bound service not hunted in this quick pass; critic-1 identified unbounded /ping process spawning and /files reads without rate limiting; defer to follow-up run"]
+  },
+  {
+    "coverage_id": "app.js%23HTTP-server::app.js%23currentUser::profile%2Fquick%2Fall-in-scope-subsystems::ATTACK-CLASSES.md%23Obvious%20things",
+    "canonical_refs": {
+      "surface": "app.js#HTTP-server",
+      "boundary": "app.js#currentUser",
+      "subsystem": "profile/quick/all-in-scope-subsystems",
+      "attack_class": "ATTACK-CLASSES.md#Obvious things"
+    },
+    "surface": "All HTTP endpoints (obvious-things sweep)",
+    "boundary": "currentUser authentication gate",
+    "subsystem": "all-in-scope-subsystems (quick profile)",
+    "attack_class": "Obvious things",
+    "starting_paths": ["app.js"],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Obvious things",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {"block": "WEB-PROTOCOL-AND-AUTH.md#Core discipline", "reason": "Static token constants visible in source; no protocol layer"}
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "verifier-hardtoken",
+    "reviewed_paths": ["app.js"],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": ["app.js"],
+        "invariant": "No hardcoded credentials, no unprotected sensitive endpoints, no information-leaking error messages",
+        "method": "source",
+        "result": "Hardcoded Bearer tokens tok-alice and tok-bob at app.js:7. exec error response at app.js:43 returns String(err) directly in HTTP response. All endpoints require authentication (app.js:23-26). No TODO/FIXME security comments, no /debug or /admin routes, no CORS headers, no cookies.",
+        "artifact": null
+      },
+      {
+        "agent_id": "verifier-hardtoken",
+        "reviewed_paths": ["app.js"],
+        "invariant": "SESSIONS must not contain hardcoded literals; error responses must not expose internal details; independently verified",
+        "method": "source",
+        "result": "Confirmed: app.js:7 SESSIONS object literal contains 'tok-alice':'alice','tok-bob':'bob' — no process.env, no external loading. app.js:43 res.end(out || String(err)) — String(err) exposes exec error details when stdout empty. Both fingerprints hardcoded-bearer-tokens-in-source and ping-error-information-leakage confirmed.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "_hardening": []
+  },
+  {
+    "coverage_id": "app.js%23SESSIONS::app.js%23currentUser::profile%2Fquick%2Fall-in-scope-subsystems::ATTACK-CLASSES.md%23Cryptography%20and%20secrets",
+    "canonical_refs": {
+      "surface": "app.js#SESSIONS",
+      "boundary": "app.js#currentUser",
+      "subsystem": "profile/quick/all-in-scope-subsystems",
+      "attack_class": "ATTACK-CLASSES.md#Cryptography and secrets"
+    },
+    "surface": "SESSIONS token map (hardcoded credential store)",
+    "boundary": "currentUser Bearer token lookup",
+    "subsystem": "all-in-scope-subsystems (quick profile)",
+    "attack_class": "Cryptography and secrets",
+    "starting_paths": ["app.js"],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Cryptography and secrets",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {"block": "WEB-PROTOCOL-AND-AUTH.md#Core discipline", "reason": "Hardcoded static tokens in source; no key derivation, JWT, or session management"}
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "verifier-statictok",
+    "reviewed_paths": ["app.js"],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": ["app.js"],
+        "invariant": "Session tokens must not be hardcoded; must be randomly generated, expiring, and revocable",
+        "method": "source",
+        "result": "app.js:7: SESSIONS hardcodes tok-alice and tok-bob as source constants. Static, never expire, never rotate, low entropy, committed in source. currentUser() performs plain object property lookup (app.js:17) — no constant-time comparison. No crypto import in auth path.",
+        "artifact": null
+      },
+      {
+        "agent_id": "verifier-statictok",
+        "reviewed_paths": ["app.js"],
+        "invariant": "Token design must include entropy, expiry, and revocation; independently verified as absent",
+        "method": "source",
+        "result": "Confirmed: no crypto require anywhere in app.js (line 1-5 require statements: http, url, child_process, fs, path only). SESSIONS literal at line 7 is constant data, no generation logic. currentUser at line 15-18 performs SESSIONS[key] property lookup with no timestamp, no expiry comparison, no revocation check. Finding is distinct from hardcoded-bearer-tokens-in-source: even if tokens were loaded from env vars, the absence of expiry/revocation would remain. Fingerprint hardcoded-static-session-tokens confirmed.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "_hardening": []
+  }
+]
